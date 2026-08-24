@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Registry Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="dossier">
+
+  <!-- Header / letterhead -->
+  <header class="letterhead">
+    <div class="letterhead-left">
+      <span class="mark">ER</span>
+      <div class="titles">
+        <h1>EmpRegistry <em>Pro</em></h1>
+        <p class="subtitle">Employee Registration &amp; Personnel Dossier</p>
+      </div>
+    </div>
+    <div class="letterhead-right">
+      <label class="ref-label" for="refNumber">Reference No.</label>
+      <input id="refNumber" class="ref-input" type="text" value="ERP-2026-00101" readonly>
+    </div>
+  </header>
+
+  <!-- Top navigation -->
+  <nav class="topnav" aria-label="Main sections">
+    <button type="button" class="topnav-link active" data-page="home">Home</button>
+    <button type="button" class="topnav-link" data-page="register">Register</button>
+    <button type="button" class="topnav-link" data-page="records">Records</button>
+    <button type="button" class="topnav-link" data-page="search">Search</button>
+    <div class="topnav-search">
+      <label for="quickSearch" class="visually-hidden">Quick search</label>
+      <input type="search" id="quickSearch" placeholder="Search employees…">
+      <button type="button" id="quickSearchBtn" class="btn-solid">Search</button>
+    </div>
+  </nav>
+
+  <!-- ================= PAGE: HOME ================= -->
+  <section class="page active" id="page-home">
+    <div class="home-panel">
+      <h2>Welcome to the personnel dossier</h2>
+      <p class="card-hint">
+        File a new employee under <strong>Register</strong>, browse everyone already on file under
+        <strong>Records</strong>, or look someone up under <strong>Search</strong>. Every dossier you file
+        stays saved on this device, even after you close the tab.
+      </p>
+      <div class="home-stats">
+        <div class="home-stat">
+          <span class="home-stat-num" id="homeCount">0</span>
+          <span class="home-stat-label">Employees filed</span>
+        </div>
+        <div class="home-stat">
+          <span class="home-stat-num" id="homeNextReg">REG-000101</span>
+          <span class="home-stat-label">Next registration no.</span>
+        </div>
+      </div>
+      <button type="button" class="btn-stamp" data-goto="register">+ Register an employee</button>
+    </div>
+  </section>
+
+  <!-- ================= PAGE: REGISTER ================= -->
+  <section class="page" id="page-register">
+    <div class="dossier-body">
+
+      <!-- Left index tabs -->
+      <nav class="tabs" aria-label="Form sections">
+        <a href="#sec-identity" class="tab active">
+          <span class="tab-no">01</span>
+          <span class="tab-name">Identity</span>
+        </a>
+        <a href="#sec-payroll" class="tab">
+          <span class="tab-no">02</span>
+          <span class="tab-name">Payroll</span>
+        </a>
+        <a href="#sec-skills" class="tab">
+          <span class="tab-no">03</span>
+          <span class="tab-name">Skills</span>
+        </a>
+        <a href="#sec-photo" class="tab">
+          <span class="tab-no">04</span>
+          <span class="tab-name">Photo I.D.</span>
+        </a>
+      </nav>
+
+      <!-- Main form -->
+      <main class="paper">
+        <div class="edit-banner" id="editBanner" hidden>
+          <span>Editing dossier for <strong id="editBannerName"></strong></span>
+          <button type="button" id="cancelEditBtn" class="btn-ghost">Cancel edit</button>
+        </div>
+        <form id="registrationForm" method="POST" action="api/register-employee.php" novalidate>
+
+          <!-- 01 Identity -->
+          <section id="sec-identity" class="card">
+            <h2><span class="card-no">01</span> Identity</h2>
+            <p class="card-hint">Fields marked <span class="req">*</span> are required for the dossier to be filed.</p>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="fullName">Full name <span class="req">*</span></label>
+                <input type="text" id="fullName" name="fullName" placeholder="e.g. your name" required>
+              </div>
+
+              <div class="field">
+                <label for="email">Email address <span class="req">*</span></label>
+                <input type="email" id="email" name="email" placeholder="abc@gmail.com" required>
+                <span class="field-note">A Gmail address is preferred but any valid email works.</span>
+              </div>
+
+              <div class="field">
+                <label for="phone">Phone number <span class="req">*</span></label>
+                <input type="tel" id="phone" name="phone" placeholder="000" pattern="^[0-9+\-\s()]{7,}$" required>
+              </div>
+
+              <div class="field">
+                <label for="department">Department <span class="req">*</span></label>
+                <input type="text" id="department" name="department" list="departmentOptions" placeholder="Type or pick a department…" required autocomplete="off">
+                <datalist id="departmentOptions">
+                  <option value="Engineering">
+                  <option value="Design">
+                  <option value="Sales">
+                  <option value="Marketing">
+                  <option value="Human Resources">
+                  <option value="Finance">
+                  <option value="Customer Support">
+                </datalist>
+              </div>
+
+              <div class="field">
+                <label for="employmentType">Employment type</label>
+                <input type="text" id="employmentType" name="employmentType" list="employmentTypeOptions" placeholder="Type or pick a type…" autocomplete="off" value="Full-time">
+                <datalist id="employmentTypeOptions">
+                  <option value="Full-time">
+                  <option value="Part-time">
+                  <option value="Contract">
+                  <option value="Intern">
+                </datalist>
+              </div>
+
+              <div class="field">
+                <label for="officeLocation">Office location</label>
+                <input type="text" id="officeLocation" name="officeLocation" list="officeLocationOptions" placeholder="Type or pick a location…" autocomplete="off">
+                <datalist id="officeLocationOptions">
+                  <option value="Lahore">
+                  <option value="Karachi">
+                  <option value="Islamabad">
+                  <option value="Remote">
+                </datalist>
+                <span class="field-note">Pick a listed branch or type any other city.</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02 Payroll -->
+          <section id="sec-payroll" class="card">
+            <h2><span class="card-no">02</span> Payroll</h2>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="jobTitle">Job title</label>
+                <input type="text" id="jobTitle" name="jobTitle" placeholder="Job title">
+              </div>
+
+              <div class="field">
+                <label for="salary">Monthly salary</label>
+                <div class="salary-row">
+                  <span class="currency-prefix">PKR</span>
+                  <input type="number" id="salary" name="salary" placeholder="0.00" min="0" step="0.01">
+                  <button type="button" id="lockSalary" class="btn-ghost btn-lock" aria-pressed="false">
+                    <span class="lock-icon">🔓</span> Mark confidential
+                  </button>
+                </div>
+                <span class="field-note" id="salaryNote">Visible on this dossier by default.</span>
+              </div>
+
+              <div class="field">
+                <label for="startDate">Start date</label>
+                <input type="date" id="startDate" name="startDate">
+              </div>
+            </div>
+          </section>
+
+          <!-- 03 Skills -->
+          <section id="sec-skills" class="card">
+            <h2><span class="card-no">03</span> Skills</h2>
+            <p class="card-hint">Select existing skills, or add a new one that isn't listed.</p>
+
+            <div class="chip-field" id="skillChips">
+              <button type="button" class="chip" data-skill="Communication">Communication</button>
+              <button type="button" class="chip" data-skill="Project Management">Project Management</button>
+              <button type="button" class="chip" data-skill="JavaScript">JavaScript</button>
+              <button type="button" class="chip" data-skill="Data Analysis">Data Analysis</button>
+              <button type="button" class="chip" data-skill="Customer Service">Customer Service</button>
+              <button type="button" class="chip" data-skill="Leadership">Leadership</button>
+            </div>
+
+            <div class="add-skill-row">
+              <label for="newSkill" class="visually-hidden">Add a new skill</label>
+              <input type="text" id="newSkill" placeholder="Add a skill not listed above…">
+              <button type="button" id="addSkillBtn" class="btn-solid">+ Add skill</button>
+            </div>
+
+            <input type="hidden" id="skillsValue" name="skills" value="">
+            <p class="field-note">Tap a skill to select it (turns filled). Selected skills: <span id="skillCount">0</span></p>
+          </section>
+
+          <!-- 04 Photo -->
+          <section id="sec-photo" class="card">
+            <h2><span class="card-no">04</span> Photo I.D.</h2>
+
+            <div class="photo-row">
+              <div class="photo-frame" id="photoFrame">
+                <span id="photoPlaceholder">No photo</span>
+                <img id="photoPreview" alt="Employee photo preview" hidden>
+              </div>
+              <div class="photo-controls">
+                <label class="btn-solid file-btn" for="photoUpload">Choose photo</label>
+                <input type="file" id="photoUpload" name="photo" accept="image/*" class="visually-hidden">
+                <button type="button" id="removePhoto" class="btn-ghost">Remove photo</button>
+                <p class="field-note">JPG or PNG, square images work best for the I.D. frame.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Actions -->
+          <div class="form-actions">
+            <button type="reset" class="btn-ghost">Clear form</button>
+            <div class="export-dropdown" id="editExportWrap" hidden>
+              <button type="button" id="editExportBtn" class="btn-ghost">⬇ Export this dossier ▾</button>
+              <div class="export-menu" id="editExportMenu" hidden>
+                <button type="button" data-format="csv">CSV</button>
+                <button type="button" data-format="txt">TXT</button>
+                <button type="button" data-format="pdf">PDF</button>
+                <button type="button" data-format="xlsx">Excel</button>
+              </div>
+            </div>
+            <button type="button" id="deleteEmployeeBtn" class="btn-ghost" hidden>Delete dossier</button>
+            <button type="submit" class="btn-stamp" id="submitBtn">Register employee</button>
+          </div>
+          <p class="field-note center" id="formFooterNote">Filed dossiers are saved on this device and sent to the registry endpoint.</p>
+        </form>
+      </main>
+    </div>
+  </section>
+
+  <!-- ================= PAGE: RECORDS ================= -->
+  <section class="page" id="page-records">
+    <div class="records-panel">
+      <div class="records-panel-head">
+        <h2><span class="card-no">•</span> Filed employees <span class="record-count" id="recordCount">(0)</span></h2>
+        <div class="export-controls">
+          <label class="select-all-label">
+            <input type="checkbox" id="recordsSelectAll"> Select all
+          </label>
+          <div class="export-dropdown">
+            <button type="button" id="recordsExportBtn" class="btn-ghost">⬇ Export ▾</button>
+            <div class="export-menu" id="recordsExportMenu" hidden>
+              <button type="button" data-format="csv">CSV</button>
+              <button type="button" data-format="txt">TXT</button>
+              <button type="button" data-format="pdf">PDF</button>
+              <button type="button" data-format="xlsx">Excel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="card-hint">Every submission is saved to this device and listed here. Tick a few dossiers and export just those, or leave nothing ticked to export everyone. Click a card to open and edit that employee.</p>
+      <div id="recordsList" class="records-grid">
+        <p class="empty-state" id="emptyState">No employees filed yet. Register one to see a record appear here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PAGE: SEARCH ================= -->
+  <section class="page" id="page-search">
+    <div class="search-panel search-panel-side">
+      <h2><span class="card-no">05</span> Search records</h2>
+      <p class="card-hint">Every filed employee is listed below — type a name, email, or reference number to narrow it down, or click any card to open and edit that dossier.</p>
+      <div class="search-row">
+        <input type="search" id="searchQuery" placeholder="Search by name, email, or reference no. …">
+        <button type="button" id="searchBtn" class="btn-solid">Search</button>
+      </div>
+      <div id="searchResults" class="records-grid search-results"></div>
+    </div>
+  </section>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
