@@ -1,0 +1,26 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies / generated files
+node_modules/
+vendor/
+
+# Logs
+*.log
+logs/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# PHP local/runtime files
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# Temporary archives / local exports
+*.tmp
+*.bak
