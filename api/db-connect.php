@@ -1,38 +1,41 @@
 <?php
-/* ============================================================
-   db-connect.php
-   One reusable, secure MySQLi connection for the whole project.
-   Call getDbConnection() from any file that needs $conn — that
-   keeps $conn explicitly declared in the file that uses it,
-   instead of relying on it "leaking in" from a require, which
-   is what was tripping up your editor's linter.
-   ============================================================ */
+/* Database connection. Credentials must live in api/db-secrets.php, which is not committed. */
 
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+mysqli_report(MYSQLI_REPORT_OFF);
 
 function getDbConnection(): mysqli {
     static $conn = null;
-    if ($conn !== null) {
-        return $conn;
-    }
+    if ($conn !== null) return $conn;
 
-    $DB_HOST = 'localhost';
-    $DB_USER = 'root';
-    $DB_PASS = '';
-    $DB_NAME = 'employeesystem';
-
-    try {
-        $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-        $conn->set_charset('utf8mb4');
-    } catch (mysqli_sql_exception $e) {
+    $secretsFile = __DIR__ . '/db-secrets.php';
+    if (!is_file($secretsFile)) {
+        error_log('DB connection failed: db-secrets.php not found.');
         http_response_code(500);
-        header('Content-Type: application/json');
-        // Never echo $e->getMessage() to the client — it can leak
-        // credentials or schema details. Log it server-side instead.
-        error_log('DB connection failed: ' . $e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        echo json_encode(['status' => 'error', 'message' => 'Database is not configured on this server yet.']);
         exit;
     }
 
+    $secrets = require $secretsFile;
+    $host = trim((string) ($secrets['host'] ?? ''));
+    $user = trim((string) ($secrets['user'] ?? ''));
+    $password = (string) ($secrets['password'] ?? '');
+    $dbname = trim((string) ($secrets['name'] ?? ''));
+
+    if ($host === '' || $user === '' || $dbname === '') {
+        error_log('DB configuration is incomplete.');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database is not configured on this server yet.']);
+        exit;
+    }
+
+    $conn = mysqli_connect($host, $user, $password, $dbname);
+    if (!$conn) {
+        error_log('DB connection failed: ' . mysqli_connect_error());
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed. Check server configuration.']);
+        exit;
+    }
+
+    $conn->set_charset('utf8mb4');
     return $conn;
 }
