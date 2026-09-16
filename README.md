@@ -1,69 +1,142 @@
-# Employee System
+# EmpRegistry Pro
 
-A browser-based employee management project built with HTML, CSS, JavaScript, and PHP/MySQL components. The repository contains a front-end employee interface together with server-side/database-related code.
+A full-stack employee registration and personnel-dossier application built with vanilla HTML/CSS/JavaScript and a PHP/MySQL backend.
 
-![HTML](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=111)
 ![PHP](https://img.shields.io/badge/PHP-8.x-777BB4?logo=php&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?logo=mysql&logoColor=white)
 
 ## Overview
 
-Employee System is a small employee-registry application demonstrating CRUD-oriented web development concepts and integration between a browser interface and PHP/MySQL code.
+EmpRegistry Pro provides a browser-based interface for registering, searching, editing, deleting, and exporting employee dossiers. The current version adds account-based authentication, server-side data isolation, employee photos, Google Sign-In support, and a MySQL-backed API.
 
-The repository currently contains the main web assets (`index.html`, `script.js`, and `style.css`), a PHP database-related script, an `api/` directory, and two archived ZIP packages.
+## Features
 
-## Repository contents
+- Email/password account registration and sign-in
+- Optional Google Sign-In
+- Session-based authentication
+- Per-account employee data isolation enforced by the backend
+- Employee registration and editing
+- Employee deletion with uploaded-photo cleanup
+- Server-side search
+- Employee photo upload and protected photo delivery
+- Salary confidentiality control
+- Skills management
+- Employee records and dossier views
+- Export functionality in the browser
+- Responsive interface for desktop and mobile screens
+
+## Architecture
+
+```text
+Browser
+  │
+  ├── index.html      UI and application shell
+  ├── script.js       Client-side state, navigation, validation and API calls
+  └── style.css       Responsive visual design
+        │
+        ▼
+PHP API (`api/`)
+  ├── auth-*.php      Authentication and sessions
+  ├── query.php       Employee listing/search
+  ├── register-employee.php
+  ├── update-employee.php
+  ├── delete-employee.php
+  ├── employee-validation.php
+  └── photo.php       Authenticated photo delivery
+        │
+        ▼
+     MySQL
+  ├── users
+  └── employees
+```
+
+## Repository structure
 
 ```text
 .
-├── api/                         # API/server-side resources
-├── index.html                   # Main web interface
-├── script.js                    # Client-side application logic
-├── style.css                    # Application styling
-├── table.php                    # PHP/MySQL database connection and setup code
-├── Employee_System_VER_1.zip    # Archived project package
-└── employee-registry-pro-updated.zip
+├── api/
+│   ├── auth-common.php
+│   ├── auth-google.php
+│   ├── auth-login.php
+│   ├── auth-logout.php
+│   ├── auth-register.php
+│   ├── auth-session.php
+│   ├── db-connect.php
+│   ├── delete-employee.php
+│   ├── employee-validation.php
+│   ├── migration.sql
+│   ├── photo.php
+│   ├── query.php
+│   ├── register-employee.php
+│   ├── update-employee.php
+│   └── uploads/              # Runtime photos; not intended for source control
+├── index.html
+├── script.js
+├── style.css
+├── .htaccess
+└── README-LOGIN.md
 ```
 
-## Technology
+## Requirements
 
-- HTML5
-- CSS3
-- JavaScript
-- PHP
-- MySQL / MySQLi
+- PHP with MySQLi support
+- MySQL / MariaDB
+- Apache or another web server capable of serving PHP
+- HTTPS for production authentication/session use
+- A Google OAuth client ID only if Google Sign-In is enabled
 
-## Local setup
+## Setup
 
-### Front end
+### 1. Create the database
 
-The static front end can be opened directly in a browser or served from a local web server.
+Use phpMyAdmin or the MySQL CLI and run `api/migration.sql` against the application's database.
 
-### PHP / MySQL
+> **Warning:** The migration intentionally drops the existing `employees` table before recreating it. Back up existing employee data first if it is still needed.
 
-The PHP portion requires a PHP-capable web server and a MySQL-compatible database server.
+### 2. Configure database credentials
 
-1. Install a local environment such as XAMPP, WAMP, or an equivalent PHP/MySQL stack.
-2. Place the project in the server's web root.
-3. Create/configure the required MySQL database.
-4. Update the database connection values in PHP configuration code for your local environment.
-5. Open the application through the local web server rather than the `file://` protocol when PHP functionality is required.
+Create `api/db-secrets.php` on the server. The file should return an array containing the database host, username, password, and database name.
 
-> **Security note:** The current `table.php` contains local database connection settings using the MySQL `root` account and an empty password. This is suitable only for a controlled local development environment. Do not reuse these credentials in production.
+**Do not commit `api/db-secrets.php`.** A template is documented in `README-LOGIN.md` and the repository ignore rules exclude local secrets.
 
-## Development notes
+### 3. Configure Google Sign-In (optional)
 
-- Keep database credentials outside version control when moving beyond local development.
-- Prefer environment variables or a non-committed configuration file for deployment credentials.
-- The repository contains ZIP archives alongside source files; these should be treated as historical packages unless they are intentionally part of the release process.
-- The PHP database setup script should be reviewed before production use because it contains direct database-creation logic and development-oriented output.
+Set the Google OAuth client ID in the authentication backend and the front-end configuration as described in `README-LOGIN.md`.
+
+The email/password flow does not depend on Google Sign-In.
+
+### 4. Serve the application
+
+Deploy the repository to a PHP-enabled web root and open `index.html` through the web server. Do not use a `file://` URL for the application because the PHP API and session cookies require the web server.
+
+The root `.htaccess` redirects HTTP traffic to HTTPS when Apache rewrite support is available.
+
+## Security model
+
+The application uses several defensive measures:
+
+- Passwords are stored using PHP's password hashing API.
+- SQL writes and lookups use prepared statements.
+- Employee queries are scoped to the authenticated user's ID.
+- Employee photos are stored under account-specific directories.
+- Direct access to the uploads directory is blocked by `.htaccess`.
+- Photo requests are authenticated and ownership-checked by `photo.php`.
+- User-controlled text is sanitized on the server and escaped before being inserted into client-side HTML.
+- Database errors are logged server-side rather than exposing raw connection details to visitors.
+
+## Deployment notes
+
+Keep production secrets outside Git. In particular, never commit the contents of `api/db-secrets.php`, database dumps containing private employee data, or private OAuth credentials.
+
+The repository may contain runtime photo directories when copied from a live server. Those files should normally remain on the server rather than being committed to the source repository.
 
 ## Current status
 
-This repository is being organized as a portfolio-ready project. The source structure and database setup should be validated locally before describing the application as production-ready.
+This is an active development/portfolio project. The authentication and multi-account backend are implemented, but deployment should still be tested against the target PHP/MySQL hosting environment before being treated as production software.
 
 ## License
 
-No license has been specified for this repository yet. Add a `LICENSE` file before distributing the project under an open-source license.
+No open-source license has been specified yet. Add a `LICENSE` file if you intend to distribute the project under a particular license.
